@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    networks:
+      - database_network
+    environment:
+      - CASSANDRA_START_RPC=true
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - database_network
+    environment:
+      - NEO4J_AUTH=neo4j/password
+
+  cassandra_loader:
+    build:
+      context: ./cassandra_loader
+      dockerfile: Dockerfile
+    depends_on:
+      - cassandra
+    networks:
+      - database_network
+
+  neo4j_loader:
+    build:
+      context: ./neo4j_loader
+      dockerfile: Dockerfile
+    depends_on:
+      - neo4j
+    networks:
+      - database_network
+
+networks:
+  database_network:
+    driver: bridge
+
+volumes:
+  cassandra_data:
+  neo4j_data:
