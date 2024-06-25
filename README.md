@@ -6,16 +6,16 @@ This project implements a simple social network using NoSQL databases. Docker an
 
 
 ## Project Structure
-1. docker-compose.yml: Docker-Compose file to start up the NoSQL databases
-2. Dockerfile: Dockerfile for creating the database containers
-3. data_preprocessing.py: Script for preprocessing and loading data into the database
-4. queries.py: Python file with the required queries
+- docker-compose.yml: Docker-Compose file to start up the NoSQL databases
+- Dockerfile: Dockerfile for creating the database containers
+- data_preprocessing.py: Script for preprocessing and loading data into the database
+- queries.py: Python file with the required queries
 
 
 ## Technologies used
-Docker - Docker-compose
-Python
-NoSql Database: Neo4J and Cassandra
+- Docker - Docker-compose
+-  Python
+-   oSql Database: Neo4J and Cassandra
 
 
 ## Installation Guide
@@ -29,7 +29,10 @@ The supported queries are detailed in queries.py and include:
 1. Listing posts made by a specific account
 2. Finding the 100 accounts with the most followers
 3. Finding the 100 accounts that follow the most of the accounts found in point 2
-4. Information for the personal homepage of any account: Number of followers, Number of followed accounts and 25 newest or most popular posts from followed accounts
+4. Information for the personal homepage of any account:
+   - Number of followers
+   - Number of followed accounts
+   - 25 newest or most popular posts from followed accounts
 5. Listing the 25 most popular posts containing a given word (with optional AND operation for multiple words)
 
 
