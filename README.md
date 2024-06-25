@@ -29,11 +29,8 @@ The supported queries are detailed in queries.py and include:
 1. Listing posts made by a specific account
 2. Finding the 100 accounts with the most followers
 3. Finding the 100 accounts that follow the most of the accounts found in point 2
-4. Information for the personal homepage of any account:
-   Number of followers
-   Number of followed accounts
-   25 newest or most popular posts from followed accounts
-6. Listing the 25 most popular posts containing a given word (with optional AND operation for multiple words)
+4. Information for the personal homepage of any account: Number of followers, Number of followed accounts and 25 newest or most popular posts from followed accounts
+5. Listing the 25 most popular posts containing a given word (with optional AND operation for multiple words)
 
 
 ## Contributors
