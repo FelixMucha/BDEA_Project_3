@@ -1,0 +1,7 @@
+neo4j
+cassandra-driver
+fastapi
+uvicorn
+pandas
+numpy
+requests

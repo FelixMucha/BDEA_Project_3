@@ -1,6 +1,51 @@
 # Big Data Engineering and Analytics Project 3
 This repository contains the source code for an exercise in the field of Big Data Engineering and Analytics as part of the Master of Computer Science, SS2024.
 
+## Instructions for Running the Project
+
+To successfully run this project, please follow the steps outlined below:
+
+1. Clone this repository to your local machine.
+2. Navigate to the directory of the project.
+3. Build the Docker containers using the command `docker-compose build`.
+4. Start the Docker containers with `docker-compose up`.
+5. Access the web interface by visiting [http://localhost:5000](http://localhost:5000) and begin using the application.
+6. To stop the application, press `Ctrl + C`.
+7. Stop the Docker containers with `docker-compose dowm`.
+
+### Checking Node Availability
+
+If you need to verify the availability of the nodes, follow these steps:
+
+1. Open a new terminal window.
+2. Navigate to the directory containing the `docker-compose.yaml` file.
+3. Access the shell of `cassandra_node1` by executing `docker-compose exec cassandra_node1 /bin/bash`.
+4. Run the `nodetool status` command to check the status of the nodes.
+5. Ensure that the status is `UN` (Up and Normal) for connectivity confirmation.
+
+### Manual Database Interaction
+
+For manual interaction with the databases:
+
+- The `DB_tweet.py` script can be executed to interact with the Cassandra database.
+- The `Graph_followers.py` script allows for interaction with the graph database.
+
+Follow the instructions within each script for specific usage details.
+
+
+
+
+
+
+
+
+
+
+
+# Old Readme
+
+
+
 ## Project Goal
 This project implements a simple social network using NoSQL databases. Docker and Docker-Compose are used to deploy the database across two containers. The main functionalities of the system include storing and querying posts, follower relationships, and likes. The task includes several specific queries that the system should support
 
