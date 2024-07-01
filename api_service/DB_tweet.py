@@ -17,8 +17,7 @@ class Tweet_DB:
         else:
             self.cluster = Cluster(hosts)
         
-        self.session = self.cluster.connect()  # Connect without specifying a keyspace
-        self.host_name = hosts[0]
+        self.session = self.cluster.connect()
 
         # Check if the keyspace exists
         keyspace_exists = self.session.execute("""
@@ -91,7 +90,7 @@ class Tweet_DB:
         """
         self.session.execute(create_table_query)
 
-    def init_random_likes(self, user_id, n_likes=10, n_tweets=10):
+    def init_random_likes(self, user_id, liker_ids, n_likes=10, n_tweets=10):
         query = "SELECT tweet_id, number_of_likes, tweet_date FROM tweets_by_date WHERE user_id = %s ORDER BY tweet_date DESC"
         result = self.session.execute(query, (user_id,))
         tweet_ids = []
@@ -106,20 +105,17 @@ class Tweet_DB:
         number_of_likes = number_of_likes[:n_tweets]
         tweet_dates = tweet_dates[:n_tweets]
 
-        # Get all possible user_ids
-        results = requests.get(f"http://{self.host_name}:5000/users/get_all")
-        user_ids = [int(user) for user in results.json()]
 
         for tweet_idx, tweet_id in enumerate(tweet_ids):
             print(f'For tweet: {tweet_idx + 1} of {len(tweet_ids)}, likes are being added')
             # Get a random list of user_ids with length of n_likes
-            random_user_ids = np.random.choice(user_ids, min(n_likes, len(user_ids)), replace=False)
+            random_user_ids = np.random.choice(liker_ids, min(n_likes, len(liker_ids)), replace=False)
             
             for user_id in random_user_ids:
                 insert_query = "INSERT INTO tweet_likes (tweet_id, user_id) VALUES (%s, %s)"
                 self.session.execute(insert_query, (tweet_id, user_id))
     
-    def like_tweet(self, author_id, liker_id, tweet_id, number_of_likes, tweet_date, content):
+    def like_tweet(self, author_id, liker_id, tweet_id, number_of_likes, tweet_date, content, user_followers):
         """
         # check if the user has already liked the tweet
         query = "SELECT COUNT(*) FROM tweet_likes WHERE tweet_id = %s AND user_id = %s"
@@ -146,12 +142,8 @@ class Tweet_DB:
         VALUES (%s, %s, %s, %s, %s)
         """
         self.session.execute(insert_query, (author_id, number_of_likes, tweet_id, tweet_date, content))
-
         # update the cache
         # get all followers of the author
-        user_followers = requests.get(f"http://{self.host_name}:5000/users/user_followers", params={"user_id": str(author_id)})
-        user_followers = user_followers.json()
-        user_followers = [int(uf['follower']) for uf in user_followers]
         for follower_id in user_followers:
             update_cache_query = "UPDATE tweets_cache SET number_of_likes = %s WHERE follower_id = %s AND tweet_date = %s AND tweet_id = %s"
             self.session.execute(update_cache_query, (number_of_likes, follower_id, tweet_date, tweet_id))
@@ -311,14 +303,7 @@ class Tweet_DB:
         # Return the top n tweets
         return tweets[:n]
 
-    def update_cache(self, user_id, tweets, n=25, initial=False, new_tweet=False):
-        if initial:
-            # get tweets from the the followed users
-            user_follows = requests.get(f"http://{self.host_name}:5000/users/user_follows", params={"user_id": str(user_id)})
-            user_follows = user_follows.json()
-            user_follows = [int(uf['followed']) for uf in user_follows]
-            tweets = self.get_tweets_by_user_ids(user_follows, n, filter_words=None, by_likes=False)
-
+    def update_cache(self, user_id, tweets, n=25, new_tweet=False):
         for tweet in tweets:
             insert_query = """
                 INSERT INTO tweets_cache (follower_id, tweet_id, tweet_date, content, number_of_likes)
@@ -329,35 +314,36 @@ class Tweet_DB:
             else:
                 values = (user_id, tweet.tweet_id, tweet.tweet_date, tweet.content, tweet.number_of_likes)
             self.session.execute(insert_query, values)
-        
         # Get the current number of tweets in the cache
         query = "SELECT COUNT(*) FROM tweets_cache WHERE follower_id = %s"
         result = self.session.execute(query, (user_id,))
         count = result.one().count
-
+        
         # If the cache has more than n tweets, remove the oldest tweets
         if count > n:
-            # Get the tweet_date of the nth oldest tweet
+
             query = f"""
                 SELECT tweet_date FROM tweets_cache WHERE follower_id = %s
-                ORDER BY tweet_date ASC LIMIT 1 OFFSET %s
+                ORDER BY tweet_date ASC
             """
-            result = self.session.execute(query, (user_id, n-1))
-            oldest_tweet_date = result.one().tweet_date
-
+            result = self.session.execute(query, (user_id,))
+            tweet_dates = [row.tweet_date for row in result]
+            oldest_tweet_date = tweet_dates[n-1]
             # Delete all tweets older than the nth oldest tweet
             query = f"""
-                DELETE FROM tweets_cache WHERE follower_id = %s AND tweet_date < %s
+                DELETE FROM tweets_cache WHERE follower_id = %s AND tweet_date <= %s
             """
             self.session.execute(query, (user_id, oldest_tweet_date))
     
     def get_tweets_from_cache(self, user_id, n=25):
         query = "SELECT * FROM tweets_cache WHERE follower_id = %s LIMIT %s"
         result = self.session.execute(query, (user_id, n))
+        # result to list
+        result = list(result)
         return result
         
 
-    def post_tweet(self, user_id, tweet_text):
+    def post_tweet(self, user_id, tweet_text, user_followers):
         tweet_id = uuid.uuid4()
         tweet_date = datetime.now()
         tweet = {
@@ -381,13 +367,8 @@ class Tweet_DB:
         values = (user_id, tweet_id, tweet_date, tweet_text)
         self.session.execute(insert_query, values)
         # insert into cache in fan out style
-        user_followers = requests.get(f"http://{self.host_name}:5000/users/user_followers", params={"user_id": str(user_id)})
-        user_followers = user_followers.json()
-        user_followers = [int(uf['follower']) for uf in user_followers]
-
         for follows_id in user_followers:
-            self.update_cache(follows_id, [tweet], initial=False, new_tweet=True)
-
+            self.update_cache(int(follows_id), [tweet], new_tweet=True)
 
 
     def close(self):
@@ -398,22 +379,7 @@ class Tweet_DB:
 if __name__ == "__main__":
 
         # TODO: get the nodes reliable to work with the db
-
-
-        # TODO: self.host_name replace so it can be used only in app -> move it out of the functions
-        # TODO: add api routes to the query_service (clean_db, 
-        #                                           init_random_likes, 
-        #                                           get like table with limit,
-        #                                           cached from the user
-        #                                           post a tweet
-        #                                           cahced from a follower
-        #                                           like a tweet
-        #                                           get tweet from db for a follower
-        #                                           get tweet from cache for a follower
-        #                                           )
-        # TODO: instead flag after db type flag for presentation
         # TODO: reset db and load all data after all finished
-
         # TODO: add more comments
     
     MAX_USERS = 20
@@ -560,87 +526,5 @@ if __name__ == "__main__":
         print(row)
     """
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    """
-    # print user_mapping table
-    query = "SELECT * FROM user_mapping"
-    result = tweet_db.session.execute(query)
-    for row in result:
-        print(row)
-    """
-    # print how many unique usernames are in the database
-
-    # get column names
-    """
-    query = "SELECT * FROM tweets LIMIT 1"
-    result = tweet_db.session.execute(query)
-    column_names = result.column_names
-    print(column_names)
-    """
-
-    # Query to count unique usernames
-    # Fetch distinct usernames
-    """
-    query = "SELECT user_name FROM tweets"
-    result = tweet_db.session.execute(query)
-    names = set([row.user_name for row in result])
-    unique_user_count = len(set(row.user_name for row in result))
-    print(f"Number of unique usernames in the database: {names}")
-
-
-    user_nodes = requests.get("http://127.0.0.1:5000/users/with_most_followers", params={"limit": f"{unique_user_count}"})
-    #print(user_nodes.text, user_nodes.json())
-
-    # Update the Cassandra table with the user IDs
-    tweet_db.map_user_id_to_username(names, user_nodes.json())
-    """
-
-
-
-    # query data
-    # print df head
-    """
-    query = "SELECT * FROM tweets LIMIT 5"
-    result = tweet_db.session.execute(query)
-    for row in result:
-        print(row)
-    """
-    """
-    # get newest posts
-    newest_posts = tweet_db.get_posts_from_followed('katyperry', by_likes=False, limit=25)
-    for post in newest_posts:
-        print(post)
-    """
-    """
-    user_follows = requests.get("http://127.0.0.1:5000/users/user_follows", params={"user_id": "20747847"})
-    user_follows = user_follows.json()
-    user_follows = [int(uf['follows']) for uf in user_follows]
-    #print(user_follows.text)
-    print('-' * 100)
-    tweets = tweet_db.get_tweets_from_followed(user_follows.json(), by_likes=True, limit=25, filter_words=['love', 'hate'])
-    for tweet in tweets:
-        print(tweet.tweet_date, tweet.number_of_likes, tweet.user_name, tweet.tweet_text)
-    
-    tweet_db.post_tweet(20747847, "This is a test tweet", user_follows)
-
-    """
 
     tweet_db.close()

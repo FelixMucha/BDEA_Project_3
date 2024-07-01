@@ -26,6 +26,12 @@ services:
       - db_cluster
     ports:
       - "9042:9042"
+    healthcheck:
+      test: ["CMD", "nodetool", "status"]
+      interval: 30s
+      timeout: 30s  
+      retries: 5
+      start_period: 30s
 
   cassandra_node2:
     image: cassandra:latest
@@ -37,6 +43,12 @@ services:
       - ${USERPROFILE}/cassandra/node2/data:/var/lib/cassandra/data
     networks:
       - db_cluster
+    healthcheck:
+      test: ["CMD", "nodetool", "status"]
+      interval: 30s
+      timeout: 30s 
+      retries: 5
+      start_period: 30s
 
   api_service:
     build: ./api_service
