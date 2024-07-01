@@ -13,6 +13,9 @@ RUN chmod +x /usr/wait-for-it.sh
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+# Copy the data directory
+COPY data /app/data
+
 # Copy the rest of the application
 COPY . .
 

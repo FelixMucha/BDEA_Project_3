@@ -36,19 +36,24 @@ class TwitterGraph:
         query = "MATCH (n) DETACH DELETE n"
         tx.run(query)
     
-    def read_all_in_txt(self, txt_file):
-        with open(txt_file, "r") as file:
-            # print how many lines exist in the file
-            total_lines = 2420766 #len(file.readlines())
-            #print(f"Total lines in file: {total_lines}")
-            start_time = time.time()
-            for line_idx, line in enumerate(file):
-                if line_idx % 1000 == 0:
-                    stop_time = time.time()
-                    print(f"Processed {line_idx}/{total_lines} lines in time: {round(stop_time - start_time, 2)} seconds.")
-                    start_time = time.time()
-                follower, followed = line.strip().split()
-                graph.create_follows_relationship(follower, followed)
+    def read_all_in_txt(self, txt_file, limit=None):
+        try:
+            with open(txt_file, "r") as file:
+                # print how many lines exist in the file
+                total_lines = 2420766 #len(file.readlines())
+                #print(f"Total lines in file: {total_lines}")
+                start_time = time.time()
+                for line_idx, line in enumerate(file):
+                    if limit is not None and line_idx >= limit:
+                        break
+                    if line_idx % 1000 == 0:
+                        stop_time = time.time()
+                        print(f"Processed {line_idx}/{total_lines} lines in time: {round(stop_time - start_time, 2)} seconds.")
+                        start_time = time.time()
+                    follower, followed = line.strip().split()
+                    self.create_follows_relationship(follower, followed)
+        except Exception as e:
+            print(f"Error reading file: {e}")
     
     def get_all_users(self):
         def process_result(tx):

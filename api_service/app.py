@@ -80,13 +80,12 @@ def clean_database():
     
 
 @app.post('/process_txt_file', tags=["neo4j"])
-def process_txt_file(txt_file: str = Form(...)):
-    if not txt_file:
-        raise HTTPException(status_code=400, detail="txt_file parameter is required")
-
+def process_txt_file(txt_file: str = 'data/twitter_combined.txt', limit: int = None):
+    if not os.path.exists(txt_file):
+        raise HTTPException(status_code=400, detail="File not found")
     try:
-        graph.read_all_in_txt(txt_file)
-        return {"message": "File processing initiated"}
+        graph.read_all_in_txt(txt_file, limit=limit)
+        return {"message": "File got processed"}
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
