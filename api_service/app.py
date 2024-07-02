@@ -252,7 +252,7 @@ def like_tweet(user_id: int = 40981798, follower_id: int = 279787626, tweet_id: 
           tags=["cassandra"], 
           description="Updates the cache for a user's tweets. If this is the first time you're using this endpoint for a user, "
                       "you must set `initial=True` to initialize the cache. Subsequent updates can use the default `initial=False`.")
-def update_cache(user_id: int = 40981798, tweets: List[str] = Query(None), initial: bool = False, num_tweets: int = 25, sorted_by_likes: bool = False):
+def update_cache(user_id: int = 40981798, tweets: List[str] = Query(None), initial: bool = True, num_tweets: int = 25, sorted_by_likes: bool = False):
     # if tweets empty raise error that tweets are required if not inital
     if (tweets is None or len(tweets) == 0) and not initial:
         raise HTTPException(status_code=400, detail="tweets parameter is required if initial=False")
