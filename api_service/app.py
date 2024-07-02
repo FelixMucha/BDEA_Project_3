@@ -185,17 +185,12 @@ def status():
 
 
 @app.post("/import_tweets", tags=["cassandra"])
-def import_tweets(MAX_USERS: int = 20, csv_file: UploadFile = File(...), limit: int = None):
+def import_tweets(MAX_USERS: int = 20, csv_file: str = 'data/tweets.csv', limit: int = None):
     try:
         user_nodes = users_with_most_followers(limit=MAX_USERS)
         tweet_db.setup_all_tables()
-
-        # Save uploaded file to a temporary file, then import
-        with open(csv_file.filename, "wb") as temp_file:
-            content = csv_file.read()
-            temp_file.write(content)
         
-        tweet_db.import_csv(temp_file.name, user_nodes.json(), limit=limit)
+        tweet_db.import_csv(csv_file, user_nodes, limit=limit)
 
         return {"message": "Tweets imported successfully"}
     except Exception as e:

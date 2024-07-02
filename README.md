@@ -7,11 +7,16 @@ To successfully run this project, please follow the steps outlined below:
 
 1. Clone this repository to your local machine.
 2. Navigate to the directory of the project.
+2. Make sure that the Line Ends are configurated to be LF and not CRLF (down right corner in VS Code) safe each file with LF line endings
 3. Build the Docker containers using the command `docker-compose build`.
 4. Start the Docker containers with `docker-compose up`.
 5. Access the web interface by visiting [http://localhost:5000](http://localhost:5000) and begin using the application.
 6. To stop the application, press `Ctrl + C`.
 7. Stop the Docker containers with `docker-compose dowm`.
+
+Problems?
+
+- Try to set the timeout to 60 seconds instead of 30 seconds.
 
 ### Checking Node Availability
 
