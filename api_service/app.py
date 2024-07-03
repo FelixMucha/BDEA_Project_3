@@ -196,6 +196,14 @@ def import_tweets(MAX_USERS: int = 20, csv_file: str = 'data/tweets.csv', limit:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
+@app.get("/tweets/get_tweets_by_user", tags=["cassandra"])
+def get_tweets_by_user(user_id: int = 40981798, limit: int = 25):
+    try:
+        newest_tweets = tweet_db.get_tweets_by_user_ids([user_id], limit)
+        return {'tweets': newest_tweets}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
 @app.get("/tweets/get_tweets", tags=["cassandra"])
 def get_tweets(user_id: int = 40981798, by_date: bool = True, filter_words: List[str] = Query(None), limit: int = 25):
     try:

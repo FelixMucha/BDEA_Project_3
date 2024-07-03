@@ -71,7 +71,7 @@ services:
     ports:
       - "5000:5000"
     #command: ["/bin/sh", "-c", "/usr/wait-for-it.sh neo4j_db_1:7687 --timeout=60 && /usr/wait-for-it.sh cassandra_node1:9042 --timeout=60 && uvicorn app:app --host 0.0.0.0 --port 5000"]
-    command: ["/bin/sh", "-c", "/usr/wait-for-it.sh neo4j_db_1:7687 --timeout=60 && /usr/wait-for-it.sh cassandra_node1:9042 --timeout=60 && /usr/wait-for-it.sh cassandra_node2:9042 --timeout=60 && uvicorn app:app --host 0.0.0.0 --port 5000"]
+    command: ["/bin/sh", "-c", "/usr/wait-for-it.sh neo4j_db_1:7687 --timeout=120 && /usr/wait-for-it.sh cassandra_node1:9042 --timeout=120 && /usr/wait-for-it.sh cassandra_node2:9042 --timeout=120 && uvicorn app:app --host 0.0.0.0 --port 5000"]
 networks:
   db_cluster:
     driver: bridge

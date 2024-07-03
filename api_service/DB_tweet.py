@@ -90,6 +90,37 @@ class Tweet_DB:
         """
         self.session.execute(create_table_query)
 
+    def get_tweets_by_user(self, user_id, limit=None):
+        # Prepare the query
+        query = """
+        SELECT user_id, number_of_likes, tweet_id, tweet_date, content
+        FROM tweets_by_likes
+        WHERE user_id = %s;
+        """
+        # Initialize parameters list with user_id
+        params = [user_id]
+        
+        # Add LIMIT clause and parameter if limit is provided
+        if limit is not None:
+            query += " LIMIT %s"
+            params.append(limit)
+        
+        # Execute the query with dynamic parameters
+        rows = self.session.execute(query, params)
+    
+        # Process and return the results
+        tweets = []
+        for row in rows:
+            tweets.append({
+                'user_id': row.user_id,
+                'number_of_likes': row.number_of_likes,
+                'tweet_id': row.tweet_id,
+                'tweet_date': row.tweet_date,
+                'content': row.content
+            })
+
+        return tweets
+
     def init_random_likes(self, user_id, liker_ids, n_likes=10, n_tweets=10):
         query = "SELECT tweet_id, number_of_likes, tweet_date FROM tweets_by_date WHERE user_id = %s ORDER BY tweet_date DESC"
         result = self.session.execute(query, (user_id,))
@@ -324,8 +355,9 @@ class Tweet_DB:
 
             query = f"""
                 SELECT tweet_date FROM tweets_cache WHERE follower_id = %s
-                ORDER BY tweet_date ASC
+                ORDER BY tweet_date DESC
             """
+            # DESC LIMIT {n} previous it was ASC
             result = self.session.execute(query, (user_id,))
             tweet_dates = [row.tweet_date for row in result]
             oldest_tweet_date = tweet_dates[n-1]
@@ -377,11 +409,6 @@ class Tweet_DB:
 
 # Example usage
 if __name__ == "__main__":
-
-        # TODO: get the nodes reliable to work with the db
-        # TODO: reset db and load all data after all finished
-        # TODO: add more comments
-    
     MAX_USERS = 20
 
     # for local testing
@@ -390,16 +417,16 @@ if __name__ == "__main__":
     # tweet_db = Tweet_DB(hosts=['cassandra_node1'], keyspace='tweets')
     user_id = 40981798 #20747847
 
-    """
+    
     # read data from csv file
     user_nodes = requests.get("http://127.0.0.1:5000/users/with_most_followers", params={"limit": f"{MAX_USERS}"})
     
-    #tweet_db.clean_database()
-    tweet_db.setup_all_tables()
+    tweet_db.clean_database()
+    # tweet_db.setup_all_tables()
 
-    data_path = "data/tweets.csv"
+    data_path = "api_service/data/tweets.csv"
     tweet_db.import_csv(data_path, user_nodes.json(), limit=None)
-    """
+    
     
     """
     print('-' * 100)
@@ -473,7 +500,7 @@ if __name__ == "__main__":
         print(tweet)
     """
 
-    
+    """    
     print('-' * 100)
     print('Like a tweet')
     print('-' * 100)
@@ -511,7 +538,7 @@ if __name__ == "__main__":
     result = tweet_db.session.execute(query, (user_id,))
     for row in result:
         print(row)
-
+    """
     
     """
     # update cache

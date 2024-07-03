@@ -165,9 +165,9 @@ if __name__ == "__main__":
     graph = TwitterGraph(uri, user, password)
     
     # read all data from txt file
-    '''txt_file = "data/twitter_combined.txt"
+    txt_file = "api_service/data/twitter_combined.txt"
     graph.clean_database()
-    graph.read_all_in_txt(txt_file)'''
+    graph.read_all_in_txt(txt_file)
     
     print('-' * 100)
     print('get users which has most followers')
