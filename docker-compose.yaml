@@ -1,19 +1,4 @@
 services:
-  neo4j_db_1:
-    image: neo4j:latest
-    environment:
-      NEO4J_AUTH: neo4j/testtest
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    volumes:
-      - ${USERPROFILE}/neo4j/data1:/data
-      - ${USERPROFILE}/neo4j/logs1:/logs
-      - ${USERPROFILE}/neo4j/import1:/var/lib/neo4j/import
-      - ${USERPROFILE}/neo4j/plugins1:/plugins
-    networks:
-      - db_cluster
-
   cassandra_node1:
     image: cassandra:latest
     environment:
@@ -39,6 +24,10 @@ services:
       - CASSANDRA_CLUSTER_NAME=mycluster
       - CASSANDRA_SEEDS=cassandra_node1,cassandra_node2
       - CASSANDRA_BROADCAST_ADDRESS=cassandra_node2
+    depends_on:
+      cassandra_node1:
+        # condition: service_healthy
+        condition: service_started
     volumes:
       - ${USERPROFILE}/cassandra/node2/data:/var/lib/cassandra/data
     networks:
@@ -49,6 +38,21 @@ services:
       timeout: 30s 
       retries: 5
       start_period: 30s
+
+  neo4j_db_1:
+    image: neo4j:latest
+    environment:
+      NEO4J_AUTH: neo4j/testtest
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ${USERPROFILE}/neo4j/data1:/data
+      - ${USERPROFILE}/neo4j/logs1:/logs
+      - ${USERPROFILE}/neo4j/import1:/var/lib/neo4j/import
+      - ${USERPROFILE}/neo4j/plugins1:/plugins
+    networks:
+      - db_cluster
 
   api_service:
     build: ./api_service
@@ -66,8 +70,8 @@ services:
       - db_cluster
     ports:
       - "5000:5000"
-    command: ["/bin/sh", "-c", "/usr/wait-for-it.sh neo4j_db_1:7687 --timeout=30 && /usr/wait-for-it.sh cassandra_node1:9042 --timeout=30 && uvicorn app:app --host 0.0.0.0 --port 5000"]
-
+    #command: ["/bin/sh", "-c", "/usr/wait-for-it.sh neo4j_db_1:7687 --timeout=60 && /usr/wait-for-it.sh cassandra_node1:9042 --timeout=60 && uvicorn app:app --host 0.0.0.0 --port 5000"]
+    command: ["/bin/sh", "-c", "/usr/wait-for-it.sh neo4j_db_1:7687 --timeout=60 && /usr/wait-for-it.sh cassandra_node1:9042 --timeout=60 && /usr/wait-for-it.sh cassandra_node2:9042 --timeout=60 && uvicorn app:app --host 0.0.0.0 --port 5000"]
 networks:
   db_cluster:
     driver: bridge
